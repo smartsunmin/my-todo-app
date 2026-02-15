@@ -872,7 +872,7 @@
                     <div class="todo-content">
                         <div class="todo-text ${todo.completed ? 'completed' : ''}">${escapeHtml(todo.text)}</div>
                         <div class="todo-meta">
-                            <span class="todo-time">${formatTime(todo.time)}</span>
+                            <span class="todo-time">🕐 添加于 ${formatTime(todo.time)}</span>
                             <span class="todo-category category-${todo.category}">${getCategoryName(todo.category)}</span>
                             ${todo.reminder ? `<span class="todo-reminder">⏰ ${formatTime(todo.reminder)}</span>` : ''}
                         </div>
@@ -1039,12 +1039,28 @@
 
         function formatTime(isoString) {
             const date = new Date(isoString);
-            return date.toLocaleString('zh-CN', {
-                month: 'short',
-                day: 'numeric',
+            const now = new Date();
+            const isToday = date.toDateString() === now.toDateString();
+            const isYesterday = new Date(now - 86400000).toDateString() === date.toDateString();
+            
+            const timeStr = date.toLocaleString('zh-CN', {
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
+                second: '2-digit'
             });
+            
+            if (isToday) {
+                return `今天 ${timeStr}`;
+            } else if (isYesterday) {
+                return `昨天 ${timeStr}`;
+            } else {
+                const dateStr = date.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                });
+                return `${dateStr} ${timeStr}`;
+            }
         }
 
         function getCategoryName(cat) {
