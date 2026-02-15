@@ -1,0 +1,26 @@
+{
+    "name": "我的待办清单",
+    "short_name": "待办清单",
+    "description": "Smartsun 的个人待办清单 - 支持分类、搜索、提醒",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#6366f1",
+    "theme_color": "#6366f1",
+    "orientation": "portrait",
+    "scope": "/",
+    "lang": "zh-CN",
+    "icons": [
+        {
+            "src": "icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
