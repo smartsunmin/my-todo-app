@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="待办清单">
+    <title>我的待办</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 100px;
+        }
+        
+        /* 锁屏界面 */
+        .lock-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 40px;
+        }
+        
+        .lock-screen.hidden {
+            display: none;
+        }
+        
+        .lock-icon {
+            font-size: 80px;
+            margin-bottom: 30px;
+        }
+        
+        .lock-title {
+            color: white;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .lock-subtitle {
+            color: rgba(255,255,255,0.8);
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+        
+        .lock-input {
+            width: 100%;
+            max-width: 280px;
+            padding: 16px 20px;
+            border: none;
+            border-radius: 16px;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 8px;
+            background: rgba(255,255,255,0.95);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .lock-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(255,255,255,0.3);
+        }
+        
+        .lock-btn {
+            margin-top: 20px;
+            padding: 14px 40px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.5);
+            color: white;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+        
+        .lock-hint {
+            margin-top: 20px;
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+        }
+        
+        /* 头部 */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 50px 20px 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .header-subtitle {
+            opacity: 0.9;
+            font-size: 15px;
+        }
+        
+        .header-stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 25px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* 搜索栏 */
+        .search-container {
+            padding: 20px;
+            background: var(--card);
+            margin: -20px 20px 20px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 12px 16px;
+            gap: 10px;
+        }
+        
+        .search-icon {
+            font-size: 20px;
+            opacity: 0.5;
+        }
+        
+        .search-input {
+            flex: 1;
+            border: none;
+            background: none;
+            font-size: 16px;
+            outline: none;
+            color: var(--text);
+        }
+        
+        .search-input::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .search-clear {
+            font-size: 20px;
+            opacity: 0.5;
+            cursor: pointer;
+            padding: 4px;
+        }
+        
+        /* 分类标签 */
+        .category-container {
+            padding: 0 20px 20px;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .category-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .category-tag {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .category-tag.active {
+            transform: scale(1.05);
+            box-shadow: var(--shadow);
+        }
+        
+        .category-all { background: #f1f5f9; color: #475569; }
+        .category-all.active { background: #475569; color: white; }
+        
+        .category-work { background: #dbeafe; color: #1e40af; }
+        .category-work.active { background: #3b82f6; color: white; }
+        
+        .category-personal { background: #fce7f3; color: #9d174d; }
+        .category-personal.active { background: #ec4899; color: white; }
+        
+        .category-urgent { background: #fee2e2; color: #991b1b; }
+        .category-urgent.active { background: #ef4444; color: white; }
+        
+        .category-shopping { background: #dcfce7; color: #166534; }
+        .category-shopping.active { background: #22c55e; color: white; }
+        
+        /* 待办列表 */
+        .todo-list {
+            padding: 0 20px;
+        }
+        
+        .todo-item {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            transition: all 0.2s;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .todo-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-top: 2px;
+            transition: all 0.2s;
+        }
+        
+        .todo-checkbox.checked {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+        
+        .todo-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .todo-text {
+            font-size: 16px;
+            color: var(--text);
+            margin-bottom: 6px;
+            word-break: break-word;
+        }
+        
+        .todo-text.completed {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+        }
+        
+        .todo-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .todo-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .todo-category {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .todo-reminder {
+            font-size: 12px;
+            color: var(--warning);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .todo-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .todo-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--bg);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        
+        .todo-btn:hover {
+            background: var(--border);
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-text {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .empty-hint {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        /* 底部添加按钮 */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        
+        .fab:active {
+            transform: scale(0.95);
+        }
+        
+        /* 添加待办弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: flex-end;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--card);
+            border-radius: 24px 24px 0 0;
+            padding: 30px 24px 40px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+            opacity: 0.5;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus, .form-textarea:focus {
+            border-color: var(--primary);
+        }
+        
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .category-select {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .category-option {
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .category-option.selected {
+            border-color: currentColor;
+            transform: scale(1.05);
+        }
+        
+        .reminder-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: var(--bg);
+            border-radius: 12px;
+        }
+        
+        .toggle-switch {
+            width: 52px;
+            height: 28px;
+            background: var(--border);
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .toggle-switch.active {
+            background: var(--primary);
+        }
+        
+        .toggle-switch::after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .toggle-switch.active::after {
+            transform: translateX(24px);
+        }
+        
+        .reminder-options {
+            display: none;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .reminder-options.show {
+            display: block;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+        
+        /* 剪贴板提示 */
+        .clipboard-toast {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            background: var(--card);
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: var(--shadow-lg);
+            z-index: 300;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        .clipboard-toast.show {
+            display: block;
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .clipboard-content {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .clipboard-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .clipboard-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .clipboard-btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .clipboard-btn-secondary {
+            background: var(--bg);
+            color: var(--text);
+        }
+    </style>
+</head>
+<body>
+    <!-- 锁屏 -->
+    <div class="lock-screen" id="lockScreen">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-title">待办清单</div>
+        <div class="lock-subtitle">保护您的隐私</div>
+        <input type="password" class="lock-input" id="lockInput" placeholder="输入密码" maxlength="6">
+        <button class="lock-btn" onclick="unlock()">解锁</button>
+        <div class="lock-hint">默认密码: 123456</div>
+    </div>
+
+    <!-- 剪贴板提示 -->
+    <div class="clipboard-toast" id="clipboardToast">
+        <div class="clipboard-content" id="clipboardContent">检测到剪贴板内容</div>
+        <div class="clipboard-actions">
+            <button class="clipboard-btn clipboard-btn-primary" onclick="addFromClipboard()">添加为待办</button>
+            <button class="clipboard-btn clipboard-btn-secondary" onclick="dismissClipboard()">忽略</button>
+        </div>
+    </div>
+
+    <!-- 主界面 -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-title">我的待办</div>
+            <div class="header-subtitle">高效管理每一天</div>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="statTotal">0</div>
+                    <div class="stat-label">全部</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="statPending">0</div>
+                    <div class="stat-label">待办</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="statCompleted">0</div>
+                    <div class="stat-label">已完成</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索 -->
+    <div class="search-container">
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="searchInput" placeholder="搜索待办事项..." oninput="searchTodos()">
+            <span class="search-clear" onclick="clearSearch()" style="display:none">✕</span>
+        </div>
+    </div>
+
+    <!-- 分类标签 -->
+    <div class="category-container">
+        <div class="category-tag category-all active" onclick="filterCategory('all')">全部</div>
+        <div class="category-tag category-work" onclick="filterCategory('work')">工作</div>
+        <div class="category-tag category-personal" onclick="filterCategory('personal')">个人</div>
+        <div class="category-tag category-urgent" onclick="filterCategory('urgent')">紧急</div>
+        <div class="category-tag category-shopping" onclick="filterCategory('shopping')">购物</div>
+    </div>
+
+    <!-- 待办列表 -->
+    <div class="todo-list" id="todoList">
+        <!-- 动态生成 -->
+    </div>
+
+    <!-- 添加按钮 -->
+    <button class="fab" onclick="openModal()">+</button>
+
+    <!-- 添加弹窗 -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">新建待办</div>
+                <span class="modal-close" onclick="closeModal()">✕</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">待办内容</label>
+                <textarea class="form-textarea" id="todoText" placeholder="请输入待办事项..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">分类</label>
+                <div class="category-select">
+                    <div class="category-option category-work" data-cat="work" onclick="selectCategory(this)">工作</div>
+                    <div class="category-option category-personal" data-cat="personal" onclick="selectCategory(this)">个人</div>
+                    <div class="category-option category-urgent" data-cat="urgent" onclick="selectCategory(this)">紧急</div>
+                    <div class="category-option category-shopping selected" data-cat="shopping" onclick="selectCategory(this)">购物</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="reminder-toggle">
+                    <span>设置提醒</span>
+                    <div class="toggle-switch" id="reminderToggle" onclick="toggleReminder()"></div>
+                </div>
+                <div class="reminder-options" id="reminderOptions">
+                    <input type="datetime-local" class="form-input" id="reminderTime">
+                </div>
+            </div>
+            
+            <button class="submit-btn" onclick="addTodo()">添加待办</button>
+        </div>
+    </div>
+
+    <script>
+        // 数据存储
+        let todos = JSON.parse(localStorage.getItem('todos') || '[]');
+        let currentCategory = 'all';
+        let selectedCategory = 'shopping';
+        let reminderEnabled = false;
+        let clipboardText = '';
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            checkClipboard();
+            renderTodos();
+            updateStats();
+            requestNotificationPermission();
+        });
+
+        // 解锁
+        function unlock() {
+            const input = document.getElementById('lockInput');
+            if (input.value === '123456') {
+                document.getElementById('lockScreen').classList.add('hidden');
+                localStorage.setItem('unlocked', Date.now());
+            } else {
+                input.style.borderColor = '#ef4444';
+                setTimeout(() => input.style.borderColor = '', 300);
+            }
+        }
+
+        // 检查剪贴板
+        async function checkClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text && text.trim() && text !== clipboardText) {
+                    clipboardText = text;
+                    document.getElementById('clipboardContent').textContent = text.substring(0, 50) + (text.length > 50 ? '...' : '');
+                    document.getElementById('clipboardToast').classList.add('show');
+                }
+            } catch (e) {
+                console.log('无法读取剪贴板');
+            }
+        }
+
+        // 从剪贴板添加
+        function addFromClipboard() {
+            document.getElementById('todoText').value = clipboardText;
+            openModal();
+            dismissClipboard();
+        }
+
+        // 忽略剪贴板
+        function dismissClipboard() {
+            document.getElementById('clipboardToast').classList.remove('show');
+        }
+
+        // 渲染待办列表
+        function renderTodos() {
+            const list = document.getElementById('todoList');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = todos.filter(todo => {
+                // 分类筛选
+                if (currentCategory !== 'all' && todo.category !== currentCategory) return false;
+                // 搜索筛选
+                if (searchTerm && !todo.text.toLowerCase().includes(searchTerm)) return false;
+                return true;
+            });
+
+            // 排序：未完成的在前，按时间倒序
+            filtered.sort((a, b) => {
+                if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                return b.id - a.id;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📝</div>
+                        <div class="empty-text">暂无待办事项</div>
+                        <div class="empty-hint">点击右下角 + 按钮添加</div>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = filtered.map(todo => `
+                <div class="todo-item">
+                    <div class="todo-checkbox ${todo.completed ? 'checked' : ''}" onclick="toggleTodo(${todo.id})">
+                        ${todo.completed ? '✓' : ''}
+                    </div>
+                    <div class="todo-content">
+                        <div class="todo-text ${todo.completed ? 'completed' : ''}">${escapeHtml(todo.text)}</div>
+                        <div class="todo-meta">
+                            <span class="todo-time">${formatTime(todo.time)}</span>
+                            <span class="todo-category category-${todo.category}">${getCategoryName(todo.category)}</span>
+                            ${todo.reminder ? `<span class="todo-reminder">⏰ ${formatTime(todo.reminder)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="todo-actions">
+                        <button class="todo-btn" onclick="deleteTodo(${todo.id})">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 切换完成状态
+        function toggleTodo(id) {
+            const todo = todos.find(t => t.id === id);
+            if (todo) {
+                todo.completed = !todo.completed;
+                saveTodos();
+                renderTodos();
+                updateStats();
+            }
+        }
+
+        // 删除待办
+        function deleteTodo(id) {
+            if (confirm('确定要删除这个待办吗？')) {
+                todos = todos.filter(t => t.id !== id);
+                saveTodos();
+                renderTodos();
+                updateStats();
+            }
+        }
+
+        // 添加待办
+        function addTodo() {
+            const text = document.getElementById('todoText').value.trim();
+            if (!text) {
+                alert('请输入待办内容');
+                return;
+            }
+
+            const reminderTime = reminderEnabled ? document.getElementById('reminderTime').value : null;
+
+            todos.unshift({
+                id: Date.now(),
+                text: text,
+                category: selectedCategory,
+                completed: false,
+                time: new Date().toISOString(),
+                reminder: reminderTime
+            });
+
+            saveTodos();
+            renderTodos();
+            updateStats();
+            closeModal();
+
+            // 设置提醒
+            if (reminderTime) {
+                scheduleReminder(text, reminderTime);
+            }
+        }
+
+        // 保存到本地
+        function saveTodos() {
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        // 更新统计
+        function updateStats() {
+            const total = todos.length;
+            const completed = todos.filter(t => t.completed).length;
+            const pending = total - completed;
+
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statPending').textContent = pending;
+            document.getElementById('statCompleted').textContent = completed;
+        }
+
+        // 分类筛选
+        function filterCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.category-tag').forEach(tag => {
+                tag.classList.remove('active');
+            });
+            document.querySelector(`.category-${cat}`).classList.add('active');
+            renderTodos();
+        }
+
+        // 搜索
+        function searchTodos() {
+            const input = document.getElementById('searchInput');
+            const clear = document.querySelector('.search-clear');
+            clear.style.display = input.value ? 'block' : 'none';
+            renderTodos();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.querySelector('.search-clear').style.display = 'none';
+            renderTodos();
+        }
+
+        // 选择分类
+        function selectCategory(el) {
+            document.querySelectorAll('.category-option').forEach(opt => opt.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedCategory = el.dataset.cat;
+        }
+
+        // 切换提醒
+        function toggleReminder() {
+            reminderEnabled = !reminderEnabled;
+            document.getElementById('reminderToggle').classList.toggle('active', reminderEnabled);
+            document.getElementById('reminderOptions').classList.toggle('show', reminderEnabled);
+        }
+
+        // 弹窗控制
+        function openModal() {
+            document.getElementById('modal').classList.add('show');
+            document.getElementById('todoText').value = '';
+            document.getElementById('todoText').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+        }
+
+        // 点击遮罩关闭
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('modal')) closeModal();
+        });
+
+        // 通知权限
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        // 设置提醒
+        function scheduleReminder(text, time) {
+            const reminderTime = new Date(time).getTime();
+            const now = Date.now();
+            const delay = reminderTime - now;
+
+            if (delay > 0) {
+                setTimeout(() => {
+                    if (Notification.permission === 'granted') {
+                        new Notification('待办提醒', {
+                            body: text,
+                            icon: 'icon-192.png'
+                        });
+                    }
+                }, delay);
+            }
+        }
+
+        // 工具函数
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString('zh-CN', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getCategoryName(cat) {
+            const names = {
+                work: '工作',
+                personal: '个人',
+                urgent: '紧急',
+                shopping: '购物'
+            };
+            return names[cat] || cat;
+        }
+
+        // 注册 Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
