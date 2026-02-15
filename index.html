@@ -266,73 +266,6 @@
         .category-shopping { background: #dcfce7; color: #166534; }
         .category-shopping.active { background: #22c55e; color: white; }
         
-        /* 计时卡片 - 青色渐变 */
-        .timer-card {
-            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%);
-            border-radius: 16px;
-            padding: 20px;
-            margin: 0 20px 20px;
-            color: white;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);
-        }
-        
-        .timer-card::before {
-            content: "";
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 200px;
-            height: 200px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 50%;
-        }
-        
-        .timer-content {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .timer-info { flex: 1; }
-        .timer-title { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
-        .timer-status { font-size: 14px; opacity: 0.9; display: flex; align-items: center; gap: 6px; }
-        .timer-display { font-size: 28px; font-weight: 700; margin: 10px 0; font-variant-numeric: tabular-nums; }
-        
-        .timer-btn {
-            background: rgba(255,255,255,0.2);
-            border: 2px solid rgba(255,255,255,0.5);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            transition: all 0.2s;
-            min-width: 80px;
-        }
-        
-        .timer-btn:hover { background: rgba(255,255,255,0.3); }
-        .timer-btn:active { transform: scale(0.95); }
-        
-        .timer-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #fbbf24;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.2); }
-        }
-        
         /* 待办列表 */
         .todo-list {
             padding: 0 20px;
@@ -801,21 +734,6 @@
         <div class="category-tag category-personal" onclick="filterCategory('personal')">个人</div>
         <div class="category-tag category-urgent" onclick="filterCategory('urgent')">紧急</div>
         <div class="category-tag category-shopping" onclick="filterCategory('shopping')">购物</div>
-    </div>
-
-    <!-- 计时卡片 -->
-    <div class="timer-card" id="timerCard" style="display: none;">
-        <div class="timer-content">
-            <div class="timer-info">
-                <div class="timer-title" id="timerTitle"></div>
-                <div class="timer-status">
-                    <span class="timer-indicator" id="timerIndicator" style="display: none;"></span>
-                    <span id="timerStatus">点击开始计时</span>
-                </div>
-                <div class="timer-display" id="timerDisplay">00:00:00</div>
-            </div>
-            <button class="timer-btn" id="timerBtn" onclick="toggleTimer()">开始</button>
-        </div>
     </div>
 
     <!-- 待办列表 -->
