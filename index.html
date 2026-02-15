@@ -797,17 +797,16 @@
             requestNotificationPermission();
         });
 
-        // 解锁
+        // 解锁（已禁用密码，自动进入）
         function unlock() {
-            const input = document.getElementById('lockInput');
-            if (input.value === '123456') {
-                document.getElementById('lockScreen').classList.add('hidden');
-                localStorage.setItem('unlocked', Date.now());
-            } else {
-                input.style.borderColor = '#ef4444';
-                setTimeout(() => input.style.borderColor = '', 300);
-            }
+            document.getElementById('lockScreen').classList.add('hidden');
+            localStorage.setItem('unlocked', Date.now());
         }
+        
+        // 页面加载自动解锁
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(unlock, 100); // 延迟100ms自动解锁
+        });
 
         // 检查剪贴板
         async function checkClipboard() {
