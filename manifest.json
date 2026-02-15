@@ -2,12 +2,12 @@
     "name": "我的待办清单",
     "short_name": "待办清单",
     "description": "Smartsun 的个人待办清单",
-    "start_url": "/",
+    "start_url": "/my-todo-app/",
     "display": "standalone",
     "background_color": "#0891b2",
     "theme_color": "#0891b2",
     "orientation": "portrait",
-    "scope": "/",
+    "scope": "/my-todo-app/",
     "lang": "zh-CN",
     "icons": [
         {
