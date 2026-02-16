@@ -1,8 +1,10 @@
-const CACHE_NAME = 'todo-app-v1';
+const CACHE_NAME = 'todo-app-v2';
+
+// 使用相对路径，适配 GitHub Pages 子目录
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/manifest.json'
+    './',
+    './index.html',
+    './manifest.json'
 ];
 
 // 安装时缓存
@@ -34,7 +36,7 @@ self.addEventListener('activate', event => {
     self.clients.claim();
 });
 
-// 拦截请求
+// 拦截请求 - 优先使用缓存，支持离线
 self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request)
@@ -43,11 +45,22 @@ self.addEventListener('fetch', event => {
                 if (response) {
                     return response;
                 }
-                // 否则网络请求
+                
+                // 尝试网络请求
                 return fetch(event.request)
+                    .then(networkResponse => {
+                        // 缓存新请求
+                        if (networkResponse && networkResponse.status === 200) {
+                            const clone = networkResponse.clone();
+                            caches.open(CACHE_NAME).then(cache => {
+                                cache.put(event.request, clone);
+                            });
+                        }
+                        return networkResponse;
+                    })
                     .catch(() => {
-                        // 离线且没有缓存
-                        return new Response('离线模式 - 请联网后刷新');
+                        // 离线且没有缓存时，尝试返回默认页面
+                        return caches.match('./index.html');
                     });
             })
     );
