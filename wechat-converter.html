@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown 转微信排版工具 - 专业版</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px 20px;
+            text-align: center;
+            color: #fff;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .container {
+            display: flex;
+            max-width: 1500px;
+            margin: 20px auto;
+            gap: 20px;
+            padding: 0 20px;
+        }
+        
+        .panel {
+            flex: 1;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-header {
+            background: #2c3e50;
+            color: #fff;
+            padding: 15px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .input-area {
+            width: 100%;
+            flex: 1;
+            min-height: 500px;
+            border: none;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.8;
+            resize: none;
+            outline: none;
+            font-family: 'Monaco', 'Menlo', 'Consolas', 'Courier New', monospace;
+            background: #fafafa;
+        }
+        
+        .preview-area {
+            flex: 1;
+            min-height: 500px;
+            overflow-y: auto;
+            background: #f0f0f0;
+        }
+        
+        /* 微信文章样式 - 精确还原 */
+        .wechat-article {
+            max-width: 677px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* 文章标题 */
+        .wechat-article .article-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            line-height: 1.4;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        /* 作者区域 */
+        .wechat-article .article-meta {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        
+        .wechat-article .author-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 18px;
+            margin-right: 12px;
+            font-weight: bold;
+        }
+        
+        .wechat-article .author-info {
+            flex: 1;
+        }
+        
+        .wechat-article .author-name {
+            font-size: 16px;
+            color: #576b95;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .wechat-article .author-name:hover {
+            opacity: 0.8;
+        }
+        
+        .wechat-article .publish-time {
+            font-size: 13px;
+            color: #999;
+            margin-top: 4px;
+        }
+        
+        /* 正文段落 */
+        .wechat-article p {
+            font-size: 17px;
+            line-height: 1.9;
+            color: #333;
+            margin-bottom: 18px;
+            text-align: justify;
+            text-indent: 2em;
+            letter-spacing: 0.5px;
+        }
+        
+        /* 第一段不缩进（通常是引言或开头） */
+        .wechat-article p.first-paragraph {
+            text-indent: 0;
+            color: #666;
+            font-size: 16px;
+            border-left: 3px solid #999;
+            padding-left: 15px;
+            margin-left: 0;
+        }
+        
+        /* 引用块 */
+        .wechat-article blockquote {
+            border-left: 4px solid #07c160;
+            padding: 15px 20px;
+            margin: 25px 0;
+            background: #f8f9fa;
+            font-style: italic;
+            color: #555;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .wechat-article blockquote p {
+            text-indent: 0;
+            margin: 0;
+            font-size: 16px;
+        }
+        
+        /* 小标题 */
+        .wechat-article h2 {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin: 35px 0 20px;
+            padding: 0 0 12px 0;
+            border-bottom: 2px solid #333;
+            display: inline-block;
+            letter-spacing: 1px;
+        }
+        
+        .wechat-article h3 {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin: 25px 0 15px;
+        }
+        
+        /* 章节数字标记 */
+        .wechat-article .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: #333;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 20px 0 15px 0;
+            font-family: Georgia, serif;
+        }
+        
+        /* 分隔线 */
+        .wechat-article hr {
+            border: none;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #ddd, transparent);
+            margin: 30px 0;
+        }
+        
+        /* 强调 */
+        .wechat-article strong {
+            color: #000;
+            font-weight: bold;
+        }
+        
+        .wechat-article em {
+            font-style: italic;
+            color: #666;
+        }
+        
+        /* 图片 */
+        .wechat-article img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 25px auto;
+            border-radius: 4px;
+        }
+        
+        /* 列表 */
+        .wechat-article ul, .wechat-article ol {
+            margin: 20px 0;
+            padding-left: 2em;
+        }
+        
+        .wechat-article li {
+            font-size: 17px;
+            line-height: 1.8;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        /* 文章底部 */
+        .wechat-article .article-footer {
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 1px solid #eee;
+            text-align: center;
+        }
+        
+        .wechat-article .author-signature {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+        
+        .wechat-article .follow-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .wechat-article .follow-tip {
+            font-size: 14px;
+            color: #576b95;
+            font-weight: 500;
+        }
+        
+        /* 链接 */
+        .wechat-article a {
+            color: #576b95;
+            text-decoration: none;
+        }
+        
+        /* 工具栏 */
+        .toolbar {
+            background: #fff;
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #07c160;
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            background: #06ad56;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        /* 使用说明 */
+        .tips {
+            background: #fff;
+            max-width: 1500px;
+            margin: 0 auto 20px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .tips h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .tips ul {
+            margin-left: 20px;
+            color: #666;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        
+        .tips code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .panel {
+                min-height: 400px;
+            }
+            
+            .wechat-article {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📝 Markdown 转微信排版工具</h1>
+        <p>专业版 · 一键生成精美微信文章排版</p>
+    </div>
+    
+    <div class="tips">
+        <h3>💡 使用说明</h3>
+        <ul>
+            <li><code># 标题</code> - 文章大标题</li>
+            <li><code>> 引用</code> - 引用块（带绿色左边框）</li>
+            <li><code>## 小标题</code> - 章节标题（带下划线）</li>
+            <li><code>1</code>、<code>2</code> 等单独一行 - 章节数字标记</li>
+            <li><code>---</code> - 分隔线</li>
+            <li><code>**文字**</code> - 加粗</li>
+        </ul>
+    </div>
+    
+    <div class="container">
+        <div class="panel">
+            <div class="panel-header">📝 输入 Markdown</div>
+            <textarea class="input-area" id="markdownInput" placeholder="# 在这里输入文章标题
+
+> 茨威格写过这样一句话："所有命运赠送的礼物，早已在暗中标好了价格"
+
+这是正文第一段，会自动首行缩进...
+
+## 第一章标题
+
+1
+
+第一节的内容...
+
+## 第二章标题
+
+2
+
+第二节的内容...
+
+---
+
+**写在最后的话...**
+
+**作者简介：** 这里是作者简介"># 陈宝莲：请替我打电话给少爷
+
+> 茨威格写过这样一句话："所有命运赠送的礼物，早已在暗中标好了价格"
+
+无意中刷到胥渡吧制作的《那些已经离我们而去的演员》，视频 1 分 10 秒处赫然出现了这样的字幕：陈宝莲（1973.5.23-2002.7.31）
+
+29 岁！？离我们而去？她已经死了吗？怎么可能？带着这样的好奇，我开始翻看她的履历：
+
+1973 年，陈宝莲出生于上海
+
+1977 年，父母离婚，之后一直由外婆抚养。
+
+## 少爷
+
+第一眼看到黄任中的照片，我是惊叹的："这得有多大的魅力"才能让一个女人如此...
+
+## 相识
+
+1992 年，19 岁的陈宝莲在台湾宣传电影的时候，在一个饭局上认识了黄任中。
+
+## 幻灭
+
+陈宝莲 4 岁的时候，父母离婚...
+
+## 再回首已是百年身
+
+著名的心理学家荣格有一个观点：一个人毕其一生的努力都是在整合他自童年时代就已形成的性格
+
+---
+
+**作者简介：** 这里是作者简介</textarea>
+            <div class="toolbar">
+                <button class="btn btn-secondary" onclick="clearInput()">清空</button>
+                <button class="btn btn-primary" onclick="copyHTML()">复制 HTML 代码</button>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <div class="panel-header">👁️ 微信预览</div>
+            <div class="preview-area">
+                <div class="wechat-article" id="preview"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const markdownInput = document.getElementById('markdownInput');
+        const preview = document.getElementById('preview');
+        
+        // 自定义渲染器
+        const renderer = new marked.Renderer();
+        
+        let isFirstParagraph = true;
+        
+        // 渲染标题
+        renderer.heading = (text, level) => {
+            if (level === 1) {
+                return `<h1 class="article-title">${text}</h1>
+                <div class="article-meta">
+                    <div class="author-avatar">作</div>
+                    <div class="author-info">
+                        <div class="author-name">作者名称</div>
+                        <div class="publish-time">${new Date().toLocaleDateString()}</div>
+                    </div>
+                </div>`;
+            } else if (level === 2) {
+                return `<h2>${text}</h2>`;
+            } else {
+                return `<h3>${text}</h3>`;
+            }
+        };
+        
+        // 渲染段落
+        renderer.paragraph = (text) => {
+            // 检查是否是纯数字（章节标记）
+            if (/^\d+$/.test(text.trim()) && text.trim().length <= 2) {
+                return `<div class="section-number">${text.trim()}</div>`;
+            }
+            
+            // 检查是否是作者简介等元信息
+            if (text.startsWith('**作者') || text.startsWith('**简介')) {
+                return `<p style="text-indent: 0; color: #666; font-size: 15px; margin-top: 30px;">${text}</p>`;
+            }
+            
+            // 第一段特殊样式（如果是引用后的第一段）
+            if (isFirstParagraph) {
+                isFirstParagraph = false;
+                return `<p class="first-paragraph">${text}</p>`;
+            }
+            
+            return `<p>${text}</p>`;
+        };
+        
+        // 渲染引用
+        renderer.blockquote = (quote) => {
+            isFirstParagraph = false; // 引用后重置
+            return `<blockquote>${quote}</blockquote>`;
+        };
+        
+        // 渲染分隔线
+        renderer.hr = () => {
+            return '<hr>';
+        };
+        
+        // 配置 marked
+        marked.setOptions({
+            renderer: renderer,
+            breaks: true,
+            gfm: true
+        });
+        
+        // 转换函数
+        function convert() {
+            const markdown = markdownInput.value;
+            if (!markdown.trim()) {
+                preview.innerHTML = '<div style="text-align: center; color: #999; padding: 60px 20px;"><p style="font-size: 16px;">输入 Markdown 开始预览</p></div>';
+                return;
+            }
+            
+            isFirstParagraph = true;
+            let html = marked.parse(markdown);
+            
+            // 自动添加文章头部（如果没有的话）
+            if (!html.includes('article-title')) {
+                const lines = markdown.split('\n');
+                const titleLine = lines.find(line => line.startsWith('# '));
+                if (titleLine) {
+                    const title = titleLine.replace('# ', '');
+                    html = html.replace(titleLine, '');
+                    html = `
+                        <h1 class="article-title">${title}</h1>
+                        <div class="article-meta">
+                            <div class="author-avatar">作</div>
+                            <div class="author-info">
+                                <div class="author-name">作者名称</div>
+                                <div class="publish-time">${new Date().toLocaleDateString()}</div>
+                            </div>
+                        </div>
+                    ` + html;
+                }
+            }
+            
+            // 添加文章底部
+            html += `
+                <div class="article-footer">
+                    <div class="author-signature">— END —</div>
+                    <div class="follow-section">
+                        <div class="follow-tip">👇 喜欢这篇文章，点个「在看」支持一下</div>
+                    </div>
+                </div>
+            `;
+            
+            preview.innerHTML = html;
+        }
+        
+        // 实时转换
+        markdownInput.addEventListener('input', convert);
+        
+        // 清空
+        function clearInput() {
+            markdownInput.value = '';
+            convert();
+        }
+        
+        // 复制 HTML
+        function copyHTML() {
+            const html = preview.innerHTML;
+            navigator.clipboard.writeText(html).then(() => {
+                alert('✅ HTML 已复制到剪贴板！\n\n可以直接粘贴到微信公众号编辑器使用。');
+            }).catch(err => {
+                // 降级方案
+                const textarea = document.createElement('textarea');
+                textarea.value = html;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('✅ HTML 已复制到剪贴板！');
+            });
+        }
+        
+        // 初始化
+        convert();
+    </script>
+</body>
+</html>
